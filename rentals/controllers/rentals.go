@@ -1,13 +1,15 @@
 package controllers
 
 import (
-	"fmt"
+	"github.com/poudels14/Neptro/brbn"
 )
 
-func View() {
-	fmt.Println("Printing from View!")
+func View(request *brbn.Request, params *brbn.Params) interface{} {
+	panic("Something went wrong")
+	return "Printing from View!"
+	return brbn.Error_404
 }
 
-func Rental() {
-	fmt.Println("Printing from Rental!")
+func Rental(request *brbn.Request, params *brbn.Params) interface{} {
+	return "Printing from Rental!"
 }

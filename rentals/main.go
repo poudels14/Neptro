@@ -5,12 +5,18 @@ import (
 )
 
 func main() {
-	b := brbn.Default()
+	server := brbn.Server{Address: "0.0.0.0", Port: "5555"}
 
 	// adding routes...
-	b.Get("/rental/:id", "get_rental", nil)
-	b.Post("/rental", "create_rental", nil)
+	// b.Get("/rental/:id", "get_rental", nil)
+	// b.Post("/rental", "create_rental", nil)
+
+	server.Chain(
+	// Put middlewares in order of execution
+	)
+	r := AllRoutes()
+	server.AddRoutes(r)
 
 	// starting server...
-	b.Start()
+	server.Start()
 }
