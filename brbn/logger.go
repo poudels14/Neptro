@@ -2,6 +2,6 @@ package brbn
 
 import "fmt"
 
-func Log(msg Serializable) {
+func Log(msg interface{}) {
 	fmt.Println(msg)
 }

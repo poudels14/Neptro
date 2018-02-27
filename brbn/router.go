@@ -6,7 +6,7 @@ type Route struct {
 	Handler Handler // TODO: come up with better signature
 }
 
-type Handler func(*Request, *Params) interface{}
+type Handler func(*Context) interface{}
 
 func GET(path string, handler Handler) Route {
 	return Route{"GET", path, handler}

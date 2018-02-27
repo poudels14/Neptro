@@ -14,8 +14,7 @@ func main() {
 	server.Chain(
 	// Put middlewares in order of execution
 	)
-	r := AllRoutes()
-	server.AddRoutes(r)
+	server.AddRoutes(Routes)
 
 	// starting server...
 	server.Start()

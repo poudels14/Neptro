@@ -20,33 +20,33 @@ type Server struct {
 	routemap map[string]map[string]Handler
 }
 
-func (s *Server) handleRequest(ctx *fasthttp.RequestCtx) {
-	request := &Request{}
-	params := &Params{}
+func (s *Server) handleRequest(fCtxt *fasthttp.RequestCtx) {
+	context := NewContext(fCtxt)
 
-	handler := s.routemap[string(ctx.Method())][string(ctx.Path())]
+	handler := s.routemap[string(fCtxt.Method())][string(fCtxt.Path())]
 	fmt.Println("Method map")
-	fmt.Println(s.routemap[string(ctx.Method())])
+	fmt.Println(s.routemap[string(fCtxt.Method())])
 
-	fmt.Println("Path map: " + string(ctx.Path()))
-	fmt.Println(s.routemap[string(ctx.Method())][string(ctx.Path())])
+	fmt.Println("Path map: " + string(fCtxt.Path()))
+	fmt.Println(s.routemap[string(fCtxt.Method())][string(fCtxt.Path())])
 
 	fmt.Println(handler)
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-			s.handleError(ctx, Error_500)
+			fmt.Println("Recovered in handleRequest:", r)
+			s.handleError(fCtxt, Error_500)
 		}
 	}()
 	if handler != nil {
-		if error, ok := handler(request, params).(HTTPError); ok {
-			s.handleError(ctx, error)
-		} else if data, ok := handler(request, params).(string); ok {
-			fmt.Fprintf(ctx, data)
+		result := handler(context)
+		if error, ok := result.(HTTPError); ok {
+			s.handleError(fCtxt, error)
+		} else if data, ok := result.(string); ok {
+			fmt.Fprintf(fCtxt, data)
 		}
 	} else {
-		s.handleError(ctx, Error_404)
+		s.handleError(fCtxt, Error_404)
 	}
 }
 
