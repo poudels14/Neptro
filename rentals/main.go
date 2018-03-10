@@ -2,19 +2,19 @@ package main
 
 import (
 	"github.com/poudels14/Neptro/brbn"
+	"github.com/poudels14/Neptro/rentals/controllers"
 )
 
 func main() {
-	server := brbn.Server{Address: "0.0.0.0", Port: "5555"}
+	server := brbn.New("0.0.0.0", "5555")
 
-	// adding routes...
-	// b.Get("/rental/:id", "get_rental", nil)
-	// b.Post("/rental", "create_rental", nil)
+	// adding middleware
+	passthrough := func(handler brbn.Handler) brbn.Handler { return handler }
+	server.Chain(passthrough).Chain(passthrough).Chain(passthrough)
 
-	server.Chain(
-	// Put middlewares in order of execution
-	)
-	server.AddRoutes(Routes)
+	// adding routes
+	server.GET("/rentals", controllers.View)
+	server.POST("/rentals/:id", controllers.Rental)
 
 	// starting server...
 	server.Start()

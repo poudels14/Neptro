@@ -17,7 +17,7 @@ func View(ctxt *brbn.Context) interface{} {
 	// panic("Something went wrong")
 	time.Sleep(time.Duration(1) * time.Second)
 	return "Printing from View!"
-	return brbn.Error_404
+	return brbn.Error404
 }
 
 func Rental(ctxt *brbn.Context) interface{} {

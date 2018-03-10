@@ -7,6 +7,6 @@ import (
 )
 
 func TestDefaultBrbn(t *testing.T) {
-	b := Default()
+	b := New("0.0.0.0", "6666")
 	assert.NotNil(t, b)
 }

@@ -3,9 +3,15 @@ package brbn
 type HTTPError struct {
 	Code    int
 	Message string
-	Html    string
 }
 
-var Error_404 = HTTPError{404, "Not found", "<div>Page not found</div>"}
+func (e *HTTPError) Error() string {
+	return e.Message
+}
 
-var Error_500 = HTTPError{500, "Internal Server Error", "<div>Internal Server Error</div>"}
+// Static declaration of common errors
+var (
+	Error404 = HTTPError{404, "Request Not Found, 🤷🏽 "}
+	Error500 = HTTPError{500, "Internal Server Error, 😰 "}
+	Error403 = HTTPError{403, "Unauthorized Access, ✋ "}
+)
