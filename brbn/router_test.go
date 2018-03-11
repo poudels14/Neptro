@@ -7,7 +7,7 @@ import (
 )
 
 func getTestHandler() Handler {
-	return func(c *Context) interface{} { return nil }
+	return func(c *Context) (*Response, HTTPError) { return nil, nil }
 }
 
 func TestNewRouter(t *testing.T) {
