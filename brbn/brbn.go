@@ -2,86 +2,123 @@ package brbn
 
 import (
 	"fmt"
+	"runtime/debug"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 )
 
-// The main entry point to a brbn app.
-// A request will go through a server pipeline that
-// will go through a router that directs it to the proper handler,
-// a middleware system that processes the request in some manner
-// and finally the handler that creates a response to send back to
-// the client.
-
-// Server is an instance of a brbn app.
-type Server struct {
-	Address  string
-	Port     string
-	routemap map[string]map[string]Handler
+/*
+	The main entry point to a brbn app. Brbn is an instance of a webserver.
+	A request will go through a server pipeline that will through a router
+	that directs it to the proper handler, a middleware sustem that processes
+	the request in some manner and finally to the handler that creates a final
+	response to send back to the client.
+*/
+type Brbn struct {
+	address     string
+	port        string
+	router      *Router
+	server      *fasthttp.Server
+	debug       bool
+	middlewares []MiddlewareFunc
 }
 
-func (s *Server) handleRequest(fCtxt *fasthttp.RequestCtx) {
+type MiddlewareFunc func(Handler) Handler
+
+func (b *Brbn) handleRequest(fCtxt *fasthttp.RequestCtx) {
 	context := NewContext(fCtxt)
 
-	handler := s.routemap[string(fCtxt.Method())][string(fCtxt.Path())]
-	fmt.Println("Method map")
-	fmt.Println(s.routemap[string(fCtxt.Method())])
+	method := string(fCtxt.Method())
+	path := string(fCtxt.Path())
+	handler := b.router.GetHandler(method, path)
 
-	fmt.Println("Path map: " + string(fCtxt.Path()))
-	fmt.Println(s.routemap[string(fCtxt.Method())][string(fCtxt.Path())])
-
-	fmt.Println(handler)
+	finalhandler := b.chainMiddleware(handler)
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in handleRequest:", r)
-			s.handleError(fCtxt, Error_500)
+			log.WithField("error", r).Error("Recovered an error in handleRequest")
+			log.Error(debug.Stack())
+			b.handleError(fCtxt, Error500)
 		}
 	}()
+
 	if handler != nil {
-		result := handler(context)
-		if error, ok := result.(HTTPError); ok {
-			s.handleError(fCtxt, error)
-		} else if data, ok := result.(string); ok {
-			fmt.Fprintf(fCtxt, data)
+		response, err := finalhandler(context)
+		if response != nil {
+			// TODO: expand this to make it more structured
+			fmt.Fprintf(fCtxt, string(response.Data))
+		} else {
+			b.handleError(fCtxt, err)
 		}
 	} else {
-		s.handleError(fCtxt, Error_404)
+		b.handleError(fCtxt, Error404)
 	}
 }
 
-func (s *Server) handleError(ctx *fasthttp.RequestCtx, e HTTPError) {
-	fmt.Fprintf(ctx, e.Message)
-	ctx.SetStatusCode(e.Code)
+func (b *Brbn) handleError(ctx *fasthttp.RequestCtx, e HTTPError) {
+	log.Error(e.Error())
+	fmt.Fprintf(ctx, e.Error())
+	ctx.SetStatusCode(e.Status())
 }
 
-func (s *Server) AddRoutes(routes []Route) {
-	if s.routemap == nil {
-		s.routemap = make(map[string]map[string]Handler, len(routes))
+// Adds a GET path to the router
+func (b *Brbn) GET(path string, handler Handler) {
+	b.add("GET", path, handler)
+}
+
+// Adds a POST path to the router
+func (b *Brbn) POST(path string, handler Handler) {
+	b.add("POST", path, handler)
+}
+
+func (b *Brbn) add(method, path string, handler Handler) {
+	b.router.Add(method, path, handler)
+}
+
+// Appends a middleware to the chain
+func (b *Brbn) Chain(middleware ...MiddlewareFunc) *Brbn {
+	b.middlewares = append(b.middlewares, middleware...)
+	return b
+}
+
+// Chains middleware together to create a final handler for a particular request
+func (b *Brbn) chainMiddleware(handler Handler) Handler {
+	if handler == nil {
+		return nil
 	}
-	for _, route := range routes {
-		fmt.Println(route)
-		if s.routemap[route.Method] == nil {
-			s.routemap[route.Method] = make(map[string]Handler)
+
+	log.Info("Chaining middlewares")
+	middleware := b.middlewares
+	return func(c *Context) (*Response, HTTPError) {
+		h := handler
+		for i := len(middleware) - 1; i >= 0; i -= 1 {
+			h = middleware[i](h)
 		}
-		s.routemap[route.Method][route.Path] = route.Handler
-		fmt.Println(route.Method + " -> " + route.Path)
+		return h(c)
 	}
-}
-
-func (s *Server) Chain(args ...Middleware) {
-	Log("Chaining middlewares...")
 }
 
 // Starts a web server that is listening for requests.
-func (s *Server) Start() {
-	fmt.Println(s.routemap)
-
-	Log("Starting server: ")
-	fasthttp.ListenAndServe(":"+s.Port, s.handleRequest)
+func (b *Brbn) Start() {
+	log.Info("Starting brbn 🥃 ")
+	portStr := fmt.Sprintf(":%s", b.port)
+	fasthttp.ListenAndServe(portStr, b.handleRequest)
 }
 
 // Stops a running web server
-func (s *Server) Stop() {
-	//stop
+func (b *Brbn) Stop() {
+	log.Warn("🥃 Stopping brbn")
+}
+
+// Creates a new brbn instance with the given address and port
+func New(address, port string) *Brbn {
+	router := NewRouter()
+	var middlewares []MiddlewareFunc
+	return &Brbn{
+		address:     address,
+		port:        port,
+		router:      router,
+		middlewares: middlewares,
+	}
 }
