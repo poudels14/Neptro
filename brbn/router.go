@@ -1,5 +1,11 @@
 package brbn
 
+import (
+	"strings"
+
+	"github.com/poudels14/Neptro/utils/lists"
+)
+
 const (
 	GET  = "GET"
 	POST = "POST"
@@ -11,6 +17,7 @@ type Router struct {
 
 type Route struct {
 	Path     string
+	args     []string
 	handlers *methodhandlers
 }
 
@@ -45,7 +52,8 @@ func (r *Router) Add(method, path string, handler Handler) {
 		handlers = route.handlers
 	} else {
 		handlers = &methodhandlers{}
-		r.routemap[path] = &Route{path, handlers}
+		args := parse(path)
+		r.routemap[path] = &Route{path, args, handlers}
 	}
 
 	switch method {
@@ -57,18 +65,50 @@ func (r *Router) Add(method, path string, handler Handler) {
 }
 
 // Retrieves the handler for the given method and path
-func (r *Router) GetHandler(method, path string) Handler {
-	if route, ok := r.routemap[path]; ok {
-		handlers := route.handlers
-		switch method {
-		case GET:
-			return handlers.get
-		case POST:
-			return handlers.post
-		default:
-			return nil
+func (r *Router) GetHandler(method, path string) (Handler, map[string]string) {
+	pathArgs := parse(path)
+	for _, v := range r.routemap {
+		routeArgs := v.args
+		ok, params := matches(routeArgs, pathArgs)
+		if ok {
+			handlers := v.handlers
+			switch method {
+			case GET:
+				return handlers.get, params
+			case POST:
+				return handlers.post, params
+			default:
+				return nil, nil
+			}
 		}
 	}
 
-	return nil
+	return nil, nil
+}
+
+// Returns the arguments of a path as a slice
+func parse(path string) []string {
+	args := strings.Split(path, "/")
+	return lists.RemoveEmptyStrings(args)
+}
+
+// Determines if the given route and path arguments are a match.
+// The route is the general path originally added to the router.
+func matches(routeArgs, pathArgs []string) (bool, map[string]string) {
+	params := make(map[string]string)
+
+	if len(pathArgs) == len(routeArgs) {
+		for i, r := range routeArgs {
+			p := pathArgs[i]
+			if r[0] == ':' {
+				key := r[1:]
+				params[key] = p
+			} else if r != p {
+				return false, nil
+			}
+		}
+		return true, params
+	}
+
+	return false, nil
 }

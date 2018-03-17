@@ -12,7 +12,7 @@ func Logger(handler brbn.Handler) brbn.Handler {
 		log.WithFields(log.Fields{
 			"uri":    request.URI(),
 			"time":   request.Time(),
-			"method": request.Method(),
+			"method": string(request.Method()),
 			"query":  request.QueryArgs(),
 			"args":   request.PostArgs(),
 		}).Info("Incoming request")

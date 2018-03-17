@@ -14,8 +14,8 @@ func View(ctxt *brbn.Context) (*brbn.Response, brbn.HTTPError) {
 	}
 	// panic("Something went wrong")
 	time.Sleep(time.Duration(1) * time.Second)
-	// return "Printing from View!"
-	return nil, brbn.Error404
+	// return "Printing from View!", nil
+	return nil, brbn.Error500
 }
 
 func Rental(ctxt *brbn.Context) (*brbn.Response, brbn.HTTPError) {
