@@ -13,8 +13,9 @@ func main() {
 	server.Chain(middleware.Logger)
 
 	// adding routes
-	server.GET("/rentals", controllers.View)
-	server.GET("/rentals/:id", controllers.Rental)
+	server.GET("/rentals", controllers.GetRentals)
+	server.GET("/rentals/:id", controllers.GetRental)
+	server.POST("/rentals/new", controllers.CreateRental)
 
 	// starting server...
 	server.Start()
