@@ -14,7 +14,7 @@ func main() {
 
 	// adding routes
 	server.GET("/rentals", controllers.View)
-	server.POST("/rentals/:id", controllers.Rental)
+	server.GET("/rentals/:id", controllers.Rental)
 
 	// starting server...
 	server.Start()
