@@ -31,8 +31,8 @@ func (b *Brbn) handleRequest(fCtxt *fasthttp.RequestCtx) {
 
 	method := string(fCtxt.Method())
 	path := string(fCtxt.Path())
-	handler, _ := b.router.GetHandler(method, path)
-	// TODO: make params part of context
+	handler, params := b.router.GetHandler(method, path)
+	context.Params = params
 
 	finalhandler := b.chainMiddleware(handler)
 

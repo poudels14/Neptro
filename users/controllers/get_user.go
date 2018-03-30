@@ -12,16 +12,30 @@ func GetUser(ctxt *brbn.Context) (*brbn.Response, brbn.HTTPError) {
 	store, err := store.InitializeUserStore()
 	utils.PanicIfError(err)
 
-	// TODO: get id from param
-	var id int64 = 1
-	user, err := store.Get(id)
+	id := ctxt.Param("id")
 
-	// TODO: well defined json structure + handling for unknown id
+	if id != nil {
+		user, err := store.Get(id.Int64())
+		userJson, err := json.Marshal(user)
+		utils.PanicIfError(err)
 
-	userJson, err := json.Marshal(user)
-	utils.PanicIfError(err)
+		return &brbn.Response{
+			Data: userJson,
+		}, nil
+	} else {
+		errorResponse := brbn.ErrorResponse{
+			ErrorCode: 404,
+			Msg:       "invalid parameter supplied",
+		}
 
-	return &brbn.Response{
-		Data: userJson,
-	}, nil
+		errorJson, err := json.Marshal(errorResponse)
+		utils.PanicIfError(err)
+
+		// the response creation is a bit verbose, we need to make this
+		// very simple for a controller to the point where they can simply
+		// return the data object and brbn would do the rest
+		return &brbn.Response{
+			Data: errorJson,
+		}, nil
+	}
 }
