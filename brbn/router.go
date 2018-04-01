@@ -28,7 +28,6 @@ type methodhandlers struct {
 }
 
 // Handler function that performs some operation on the context
-// TODO: determine if response should be explicitly returned and a more
 // complex reponse writer object needs to be created similar to what "net/http" does
 type Handler func(*Context) (*DataResponse, HTTPError)
 
@@ -72,12 +71,19 @@ func (r *Router) GetHandler(method, path string) (Handler, map[string]string) {
 			case POST:
 				return handlers.post, params
 			default:
-				return nil, nil
+				return get404Handler(), nil
 			}
 		}
 	}
 
-	return nil, nil
+	return get404Handler(), nil
+}
+
+// A default handler that simply returns an error 404 response
+func get404Handler() Handler {
+	return func(c *Context) (*DataResponse, HTTPError) {
+		return nil, Error404
+	}
 }
 
 // Returns the arguments of a path as a slice

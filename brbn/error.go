@@ -1,5 +1,7 @@
 package brbn
 
+import "fmt"
+
 // A general interface for any error that occurs during
 // HTTP processing.
 type HTTPError interface {
@@ -19,6 +21,10 @@ func (e SimpleHTTPError) Status() int {
 
 func (e SimpleHTTPError) Error() string {
 	return e.Message
+}
+
+func (e SimpleHTTPError) String() string {
+	return fmt.Sprintf("%d %s\n", e.StatusCode, e.Message)
 }
 
 // Static declaration of common errors

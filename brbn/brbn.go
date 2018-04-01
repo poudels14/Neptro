@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/fatih/color"
 	"github.com/valyala/fasthttp"
 
 	"github.com/op/go-logging"
@@ -45,21 +46,16 @@ func (b *Brbn) handleRequest(fctx *fasthttp.RequestCtx) {
 	ctx.Params = params
 	finalhandler := b.chainMiddleware(handler)
 
-	if handler != nil {
-		response, err := finalhandler(ctx)
-		if response != nil {
-			buildResponse(b, ctx)
-			ctx.SetStatusCode(fasthttp.StatusOK)
-			ctx.SetBody(renderDataResponse(ctx, response))
-		} else if err != nil {
-			b.handleError(ctx, err)
-		} else {
-			log.Error("Controller returned nil response/error")
-			b.handleError(ctx, Error500)
-		}
+	response, err := finalhandler(ctx)
+	if response != nil {
+		buildResponse(b, ctx)
+		ctx.SetStatusCode(fasthttp.StatusOK)
+		ctx.SetBody(renderDataResponse(ctx, response))
+	} else if err != nil {
+		b.handleError(ctx, err)
 	} else {
-		log.Warning("Could not find a handler")
-		b.handleError(ctx, Error404)
+		log.Error("Controller returned nil response/error")
+		b.handleError(ctx, Error500)
 	}
 }
 
@@ -97,7 +93,6 @@ func (b *Brbn) chainMiddleware(handler Handler) Handler {
 		return nil
 	}
 
-	log.Info("Chaining middlewares")
 	middleware := b.middlewares
 	return func(c *Context) (*DataResponse, HTTPError) {
 		h := handler
@@ -110,9 +105,16 @@ func (b *Brbn) chainMiddleware(handler Handler) Handler {
 
 // Starts a web server that is listening for requests.
 func (b *Brbn) Start() {
-	log.Infof("Starting %s at %s:%s", b.name, b.address, b.port)
-	portStr := fmt.Sprintf(":%s", b.port)
-	if err := fasthttp.ListenAndServe(portStr, b.handleRequest); err != nil {
+	address := fmt.Sprintf("%s:%s", b.address, b.port)
+	log.Infof("Starting %s at %s", color.GreenString(b.name), address)
+
+	server := &fasthttp.Server{
+		Handler: b.handleRequest,
+		Name:    b.name,
+	}
+
+	b.server = server
+	if err := server.ListenAndServe(address); err != nil {
 		log.Error(err)
 	}
 }

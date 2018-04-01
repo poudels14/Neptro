@@ -12,7 +12,7 @@ func Logger(handler brbn.Handler) brbn.Handler {
 	return func(c *brbn.Context) (*brbn.DataResponse, brbn.HTTPError) {
 		ctx := c.FContext
 		method := c.Method()
-		log.Infof("Incoming request - %s %s", method, ctx.URI())
+		log.Infof("%s %s", method, ctx.URI())
 
 		if method == "POST" {
 			log.Infof("Arguments: %v", ctx.PostArgs())

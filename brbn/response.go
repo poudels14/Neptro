@@ -40,7 +40,7 @@ func BuildSingleDataResponse(data interface{}) *DataResponse {
 // Sets common response data
 func buildResponse(b *Brbn, ctx *Context) {
 	fCtx := ctx.FContext
-	fCtx.Response.Header.Set("Server", b.name)
+	// fCtx.Response.Header.Set("Server", b.name)
 	fCtx.SetContentType("application/json")
 }
 
