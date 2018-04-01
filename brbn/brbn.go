@@ -36,7 +36,7 @@ func (b *Brbn) handleRequest(fctx *fasthttp.RequestCtx) {
 
 	errorRecovery := func() {
 		if r := recover(); r != nil {
-			log.Error(debug.Stack())
+			log.Errorf("%s\n", debug.Stack())
 			b.handleError(ctx, Error500)
 		}
 	}
@@ -106,7 +106,7 @@ func (b *Brbn) chainMiddleware(handler Handler) Handler {
 // Starts a web server that is listening for requests.
 func (b *Brbn) Start() {
 	address := fmt.Sprintf("%s:%s", b.address, b.port)
-	log.Infof("Starting %s at %s", color.GreenString(b.name), address)
+	log.Infof("Started %s at %s", color.GreenString(b.name), address)
 
 	server := &fasthttp.Server{
 		Handler: b.handleRequest,

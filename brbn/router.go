@@ -65,12 +65,20 @@ func (r *Router) GetHandler(method, path string) (Handler, map[string]string) {
 		ok, params := matches(routeArgs, pathArgs)
 		if ok {
 			handlers := v.handlers
+			var handler Handler
+
 			switch method {
 			case GET:
-				return handlers.get, params
+				handler = handlers.get
 			case POST:
-				return handlers.post, params
+				handler = handlers.post
 			default:
+				handler = nil
+			}
+
+			if handler != nil {
+				return handler, params
+			} else {
 				return get404Handler(), nil
 			}
 		}

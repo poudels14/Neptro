@@ -34,3 +34,8 @@ var (
 	Error403 = SimpleHTTPError{403, "Unauthorized Access, ✋ "}
 	Error202 = SimpleHTTPError{202, "Not ready yet, 🙈 "}
 )
+
+// Helper methods to get custom common errors
+func CustomError404(msg string) SimpleHTTPError {
+	return SimpleHTTPError{404, msg}
+}

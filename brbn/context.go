@@ -9,6 +9,7 @@ import (
 type Context struct {
 	FContext *fasthttp.RequestCtx
 	Params   map[string]string
+	Action   string
 }
 
 // Retrieves the client context from the header if possible

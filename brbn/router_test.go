@@ -27,6 +27,19 @@ func TestAddingGetMethod(t *testing.T) {
 	assert.Nil(t, handlers.post)
 }
 
+func TestAddingOnlyGetMethod(t *testing.T) {
+	router := NewRouter()
+	handler := getTestHandler()
+	router.Add("GET", "/items", handler)
+	assert.Equal(t, 1, len(router.routemap))
+
+	getHandler, _ := router.GetHandler("GET", "/items")
+	postHandler, _ := router.GetHandler("POST", "/items")
+
+	assert.NotNil(t, getHandler)
+	assert.NotNil(t, postHandler)
+}
+
 func TestAddingPostMethod(t *testing.T) {
 	router := NewRouter()
 	handler := getTestHandler()

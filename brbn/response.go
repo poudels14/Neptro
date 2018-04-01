@@ -5,13 +5,13 @@ import (
 )
 
 const (
-	apiVersion = "0.0"
+	apiVersion = "v1"
 )
 
 type ResponseJson struct {
 	ApiVersion string            `json:"apiVersion"`
 	Context    string            `json:"context"`
-	Method     string            `json:"method"`
+	Method     string            `json:"method,omitempty"`
 	Params     map[string]string `json:"params,omitempty"`
 	Error      *ErrorResponse    `json:"error,omitempty"`
 	Data       *DataResponse     `json:"data,omitempty"`
@@ -54,7 +54,7 @@ func renderErrorResponse(ctx *Context, e HTTPError) []byte {
 	response := ResponseJson{
 		ApiVersion: apiVersion,
 		Context:    ctx.ClientContext(),
-		Method:     ctx.Method(),
+		Method:     ctx.Action,
 		Params:     ctx.SafeParams(),
 		Error:      &err,
 	}
@@ -68,7 +68,7 @@ func renderDataResponse(ctx *Context, data *DataResponse) []byte {
 	response := ResponseJson{
 		ApiVersion: apiVersion,
 		Context:    ctx.ClientContext(),
-		Method:     ctx.Method(),
+		Method:     ctx.Action,
 		Params:     ctx.SafeParams(),
 		Data:       data,
 	}
