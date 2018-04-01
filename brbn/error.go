@@ -26,4 +26,5 @@ var (
 	Error404 = SimpleHTTPError{404, "Request Not Found, 🤷🏽 "}
 	Error500 = SimpleHTTPError{500, "Internal Server Error, 😰 "}
 	Error403 = SimpleHTTPError{403, "Unauthorized Access, ✋ "}
+	Error202 = SimpleHTTPError{202, "Not ready yet, 🙈 "}
 )

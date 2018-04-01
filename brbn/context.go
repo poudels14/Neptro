@@ -7,8 +7,39 @@ import (
 )
 
 type Context struct {
-	Request *fasthttp.RequestCtx
-	Params  map[string]string
+	FContext *fasthttp.RequestCtx
+	Params   map[string]string
+}
+
+// Retrieves the client context from the header if possible
+func (c *Context) ClientContext() string {
+	clientCtx := c.FContext.Request.Header.Peek("Context")
+	if clientCtx != nil {
+		return string(clientCtx)
+	} else {
+		return "Unknown"
+	}
+}
+
+func (c *Context) Method() string {
+	return string(c.FContext.Method())
+}
+
+func (c *Context) Path() string {
+	return string(c.FContext.Path())
+}
+
+func (c *Context) SafeParams() map[string]string {
+	return c.Params
+}
+
+// Passthrough methods for fast http context
+func (c *Context) SetStatusCode(status int) {
+	c.FContext.SetStatusCode(status)
+}
+
+func (c *Context) SetBody(body []byte) {
+	c.FContext.SetBody(body)
 }
 
 //TODO(sagar): Can we use pool for this?
@@ -55,7 +86,7 @@ func (v *Value) Bool() bool {
 //TODO(sagar): use pool for this
 func NewContext(r *fasthttp.RequestCtx) *Context {
 	return &Context{
-		Request: r,
+		FContext: r,
 	}
 }
 
@@ -64,7 +95,7 @@ func (c *Context) Param(key string) *Value {
 		return &Value{val}
 	}
 
-	query := c.Request.QueryArgs()
+	query := c.FContext.QueryArgs()
 	if query.Has(key) {
 		return &Value{string(query.Peek(key))}
 	}

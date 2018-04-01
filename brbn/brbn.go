@@ -4,64 +4,71 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
+
+	"github.com/op/go-logging"
 )
 
-/*
-	The main entry point to a brbn app. Brbn is an instance of a webserver.
-	A request will go through a server pipeline that will through a router
-	that directs it to the proper handler, a middleware sustem that processes
-	the request in some manner and finally to the handler that creates a final
-	response to send back to the client.
-*/
+var log = logging.MustGetLogger("brbn")
+
+//	The main entry point to a brbn app. Brbn is an instance of a webserver.
+//	A request will go through a server pipeline that will through a router
+//	that directs it to the proper handler, a middleware sustem that processes
+//	the request in some manner and finally to the handler that creates a final
+//	response to send back to the client.
 type Brbn struct {
 	address     string
+	debug       bool
+	middlewares []MiddlewareFunc
+	name        string
 	port        string
 	router      *Router
 	server      *fasthttp.Server
-	debug       bool
-	middlewares []MiddlewareFunc
 }
 
 type MiddlewareFunc func(Handler) Handler
 
-func (b *Brbn) handleRequest(fCtxt *fasthttp.RequestCtx) {
-	context := NewContext(fCtxt)
+func (b *Brbn) handleRequest(fctx *fasthttp.RequestCtx) {
+	ctx := NewContext(fctx)
+	method := ctx.Method()
+	path := ctx.Path()
 
-	method := string(fCtxt.Method())
-	path := string(fCtxt.Path())
+	errorRecovery := func() {
+		if r := recover(); r != nil {
+			log.Error(debug.Stack())
+			b.handleError(ctx, Error500)
+		}
+	}
+	defer errorRecovery()
+
 	handler, params := b.router.GetHandler(method, path)
-	context.Params = params
-
+	ctx.Params = params
 	finalhandler := b.chainMiddleware(handler)
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.WithField("error", r).Error("Recovered an error in handleRequest")
-			log.Error(debug.Stack())
-			b.handleError(fCtxt, Error500)
-		}
-	}()
-
 	if handler != nil {
-		response, err := finalhandler(context)
+		response, err := finalhandler(ctx)
 		if response != nil {
-			// TODO: expand this to make it more structured
-			fmt.Fprintf(fCtxt, string(response.Data))
+			buildResponse(b, ctx)
+			ctx.SetStatusCode(fasthttp.StatusOK)
+			ctx.SetBody(renderDataResponse(ctx, response))
+		} else if err != nil {
+			b.handleError(ctx, err)
 		} else {
-			b.handleError(fCtxt, err)
+			log.Error("Controller returned nil response/error")
+			b.handleError(ctx, Error500)
 		}
 	} else {
-		log.Warn("Could not find a handler")
-		b.handleError(fCtxt, Error404)
+		log.Warning("Could not find a handler")
+		b.handleError(ctx, Error404)
 	}
 }
 
-func (b *Brbn) handleError(ctx *fasthttp.RequestCtx, e HTTPError) {
-	log.Error(e.Error())
-	fmt.Fprintf(ctx, e.Error())
+// Returns a json response for the given error
+func (b *Brbn) handleError(ctx *Context, e HTTPError) {
+	log.Error(e)
+	buildResponse(b, ctx)
 	ctx.SetStatusCode(e.Status())
+	ctx.SetBody(renderErrorResponse(ctx, e))
 }
 
 // Adds a GET path to the router
@@ -92,7 +99,7 @@ func (b *Brbn) chainMiddleware(handler Handler) Handler {
 
 	log.Info("Chaining middlewares")
 	middleware := b.middlewares
-	return func(c *Context) (*Response, HTTPError) {
+	return func(c *Context) (*DataResponse, HTTPError) {
 		h := handler
 		for i := len(middleware) - 1; i >= 0; i -= 1 {
 			h = middleware[i](h)
@@ -103,24 +110,28 @@ func (b *Brbn) chainMiddleware(handler Handler) Handler {
 
 // Starts a web server that is listening for requests.
 func (b *Brbn) Start() {
-	log.Info("Starting brbn 🥃 ")
+	log.Infof("Starting %s at %s:%s", b.name, b.address, b.port)
 	portStr := fmt.Sprintf(":%s", b.port)
-	fasthttp.ListenAndServe(portStr, b.handleRequest)
+	if err := fasthttp.ListenAndServe(portStr, b.handleRequest); err != nil {
+		log.Error(err)
+	}
 }
 
 // Stops a running web server
 func (b *Brbn) Stop() {
-	log.Warn("🥃 Stopping brbn")
+	// TODO: find a graceful way to stop a server
+	log.Warningf("Stopping %s", b.name)
 }
 
 // Creates a new brbn instance with the given address and port
-func New(address, port string) *Brbn {
+func New(name, address, port string) *Brbn {
 	router := NewRouter()
 	var middlewares []MiddlewareFunc
 	return &Brbn{
 		address:     address,
+		middlewares: middlewares,
+		name:        name,
 		port:        port,
 		router:      router,
-		middlewares: middlewares,
 	}
 }

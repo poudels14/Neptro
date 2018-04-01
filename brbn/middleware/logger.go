@@ -1,21 +1,23 @@
 package middleware
 
 import (
+	"github.com/op/go-logging"
 	"github.com/poudels14/Neptro/brbn"
-	log "github.com/sirupsen/logrus"
 )
+
+var log = logging.MustGetLogger("brbn")
 
 // Logs a request
 func Logger(handler brbn.Handler) brbn.Handler {
-	return func(c *brbn.Context) (*brbn.Response, brbn.HTTPError) {
-		request := c.Request
-		log.WithFields(log.Fields{
-			"uri":    request.URI(),
-			"time":   request.Time(),
-			"method": string(request.Method()),
-			"query":  request.QueryArgs(),
-			"args":   request.PostArgs(),
-		}).Info("Incoming request")
+	return func(c *brbn.Context) (*brbn.DataResponse, brbn.HTTPError) {
+		ctx := c.FContext
+		method := c.Method()
+		log.Infof("Incoming request - %s %s", method, ctx.URI())
+
+		if method == "POST" {
+			log.Infof("Arguments: %v", ctx.PostArgs())
+		}
+
 		return handler(c)
 	}
 }

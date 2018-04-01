@@ -30,13 +30,7 @@ type methodhandlers struct {
 // Handler function that performs some operation on the context
 // TODO: determine if response should be explicitly returned and a more
 // complex reponse writer object needs to be created similar to what "net/http" does
-type Handler func(*Context) (*Response, HTTPError)
-
-type Response struct {
-	Header map[string]string
-	Status int
-	Data   []byte
-}
+type Handler func(*Context) (*DataResponse, HTTPError)
 
 // Creates a new Router instance
 func NewRouter() *Router {

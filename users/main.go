@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	server := brbn.New("0.0.0.0", "3000")
+	server := brbn.New("UserServer", "0.0.0.0", "3000")
 
 	// adding middleware
 	server.Chain(middleware.Logger)
