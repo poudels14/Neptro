@@ -2,8 +2,7 @@ package controllers
 
 import "github.com/poudels14/Neptro/brbn"
 
-func GetRental(ctxt *brbn.Context) (*brbn.Response, brbn.HTTPError) {
-	return &brbn.Response{
-		Data: []byte("Getting a rental"),
-	}, nil
+func GetRental(ctx *brbn.Context) (*brbn.DataResponse, brbn.HTTPError) {
+	ctx.Action = "rentals.getRental"
+	return nil, brbn.Error202
 }
